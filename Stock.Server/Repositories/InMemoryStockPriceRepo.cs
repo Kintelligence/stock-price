@@ -14,13 +14,13 @@ public class InMemoryStockPriceRepo : IStockPriceRepo
         foreach (var value in _dict.Values)
         {
             yield return value;
-            await Task.Delay(500);
+            await Task.Delay(50);
         }
     }
 
     public async Task UpsertStockPrice(StockPrice stockPrice)
     {
-        _dict.AddOrUpdate(stockPrice.Symbol, (symbol) => stockPrice, (symbol, prev) => stockPrice);
-        await Task.Delay(500);
+        _dict.AddOrUpdate(stockPrice.Symbol, stockPrice, (symbol, prev) => stockPrice);
+        await Task.Delay(50);
     }
 }

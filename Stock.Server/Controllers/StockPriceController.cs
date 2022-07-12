@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Stock.Server.Hubs;
 using Stock.Server.Repositories;
@@ -15,18 +16,18 @@ public class StockPriceController : ControllerBase
 {
     private readonly ILogger<StockPriceController> _logger;
     private readonly IStockPriceRepo _repo;
-    private readonly StockHub _hub;
+    private readonly StockBroadcaster _broadcaster;
     private readonly Random _random;
 
-    public StockPriceController(ILogger<StockPriceController> logger, IStockPriceRepo repo, StockHub hub)
+    public StockPriceController(ILogger<StockPriceController> logger, IStockPriceRepo repo, StockBroadcaster broadcaster)
     {
         _logger = logger;
         _repo = repo;
-        _hub = hub;
+        _broadcaster = broadcaster;
         _random = new Random();
     }
 
-    [HttpGet("StockPrices")]
+    [HttpGet("stock-prices")]
     public async IAsyncEnumerable<StockPrice> GetStockPrices()
     {
         var stockPrices = _repo.GetStockPrices();
@@ -37,7 +38,7 @@ public class StockPriceController : ControllerBase
         }
     }
 
-    [HttpPost("StockPrices")]
+    [HttpPost("stock-prices")]
     public async Task<StatusCodeResult> SetStockPrice(StockPrice stockPrice)
     {
         try
@@ -45,7 +46,7 @@ public class StockPriceController : ControllerBase
             using (new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 await _repo.UpsertStockPrice(stockPrice);
-                await _hub.UpdateStockPrice(stockPrice);
+                await _broadcaster.UpdateStockPrice(stockPrice);
             }
 
             return StatusCode(200);
@@ -57,11 +58,11 @@ public class StockPriceController : ControllerBase
         }
     }
 
-    [HttpPost("StockPrices/{symbol}/random")]
+    [HttpPost("stock-prices/{symbol}/random")]
     public async Task<StatusCodeResult> RandomizeStockPrice(string symbol)
     {
-        var bid = _random.Next();
-        var ask = bid + _random.Next();
+        var bid = _random.Next(1, 100000);
+        var ask = bid + _random.Next(1, 100);
 
         var stockPrice = new StockPrice
         {
@@ -71,5 +72,18 @@ public class StockPriceController : ControllerBase
         };
 
         return await SetStockPrice(stockPrice);
+    }
+
+    [HttpPost("stock-prices/randomize")]
+    public async Task<StatusCodeResult> RandomizeAllStockPrices()
+    {
+        var oldPrices = _repo.GetStockPrices();
+
+        await foreach (var oldPrice in oldPrices)
+        {
+            await RandomizeStockPrice(oldPrice.Symbol);
+        }
+
+        return Ok();
     }
 }
