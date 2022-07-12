@@ -16,12 +16,14 @@ public class StockPriceController : ControllerBase
     private readonly ILogger<StockPriceController> _logger;
     private readonly IStockPriceRepo _repo;
     private readonly StockHub _hub;
+    private readonly Random _random;
 
     public StockPriceController(ILogger<StockPriceController> logger, IStockPriceRepo repo, StockHub hub)
     {
         _logger = logger;
         _repo = repo;
         _hub = hub;
+        _random = new Random();
     }
 
     [HttpGet("StockPrices")]
@@ -53,5 +55,21 @@ public class StockPriceController : ControllerBase
             _logger.LogError(e, "Failed setting stock price {StockPrice}", stockPrice);
             return StatusCode(500);
         }
+    }
+
+    [HttpPost("StockPrices/{symbol}/random")]
+    public async Task<StatusCodeResult> RandomizeStockPrice(string symbol)
+    {
+        var bid = _random.Next();
+        var ask = bid + _random.Next();
+
+        var stockPrice = new StockPrice
+        {
+            Symbol = symbol,
+            BidCents = bid,
+            AskCents = ask
+        };
+
+        return await SetStockPrice(stockPrice);
     }
 }
