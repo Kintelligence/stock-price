@@ -24,7 +24,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapHub<StockHub>("/stock-prices");
+app.MapHub<StockHub>("/stocks");
 app.MapControllers();
 
 app.Run("https://localhost:5001");

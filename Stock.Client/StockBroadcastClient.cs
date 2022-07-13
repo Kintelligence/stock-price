@@ -12,7 +12,7 @@ public class StockBroadcastClient
     public StockBroadcastClient()
     {
         _connection = new HubConnectionBuilder()
-            .WithUrl("https://localhost:5001/stock-prices")
+            .WithUrl("https://localhost:5001/stocks")
             .WithAutomaticReconnect().Build();
     }
 
