@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Stock.Server.Hubs;
 
-public class StockBroadcaster
+public class StockBroadcaster : IStockBroadcaster
 {
     private readonly IHubContext<StockHub> _hubContext;
 

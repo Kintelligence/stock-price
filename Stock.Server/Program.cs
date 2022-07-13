@@ -13,7 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<IStockPriceRepo, InMemoryStockPriceRepo>()
-                .AddTransient<StockBroadcaster>();
+                .AddTransient<IStockBroadcaster, StockBroadcaster>();
 
 var app = builder.Build();
 
@@ -24,7 +24,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapHub<StockHub>("/Stocks");
+app.MapHub<StockHub>("/stock-prices");
 app.MapControllers();
 
 app.Run("https://localhost:5001");

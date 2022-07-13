@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Stock.Server.Hubs;
 using Stock.Server.Repositories;
@@ -11,15 +11,14 @@ using Stock.Server.Repositories;
 namespace Stock.Server.Controllers;
 
 [ApiController]
-[Route("[controller]")]
 public class StockPriceController : ControllerBase
 {
     private readonly ILogger<StockPriceController> _logger;
     private readonly IStockPriceRepo _repo;
-    private readonly StockBroadcaster _broadcaster;
+    private readonly IStockBroadcaster _broadcaster;
     private readonly Random _random;
 
-    public StockPriceController(ILogger<StockPriceController> logger, IStockPriceRepo repo, StockBroadcaster broadcaster)
+    public StockPriceController(ILogger<StockPriceController> logger, IStockPriceRepo repo, IStockBroadcaster broadcaster)
     {
         _logger = logger;
         _repo = repo;
@@ -58,11 +57,11 @@ public class StockPriceController : ControllerBase
         }
     }
 
-    [HttpPost("stock-prices/{symbol}/random")]
-    public async Task<StatusCodeResult> RandomizeStockPrice(string symbol)
+    [HttpPost("stock-prices/{symbol}/randomize")]
+    public async Task<StatusCodeResult> RandomizeStockPrice([MaxLength(10)] string symbol)
     {
         var bid = _random.Next(1, 100000);
-        var ask = bid + _random.Next(1, 100);
+        var ask = bid + _random.Next(1, 1000);
 
         var stockPrice = new StockPrice
         {
@@ -82,6 +81,19 @@ public class StockPriceController : ControllerBase
         await foreach (var oldPrice in oldPrices)
         {
             await RandomizeStockPrice(oldPrice.Symbol);
+        }
+
+        return Ok();
+    }
+
+    [HttpPost("stock-prices/bootstrap")]
+    public async Task<StatusCodeResult> BootstrapStockPrices()
+    {
+        var symbols = new List<string> { "AAPL", "IBM", "MSFT", "MAERSK A", "DANSKE" };
+
+        foreach (var symbol in symbols)
+        {
+            await RandomizeStockPrice(symbol);
         }
 
         return Ok();
